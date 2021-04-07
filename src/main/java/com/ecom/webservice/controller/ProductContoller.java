@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ecom.webservice.entity.Product;
+import com.ecom.webservice.exception.InvalidProductException;
+import com.ecom.webservice.exception.ProductAlreadyExistException;
+import com.ecom.webservice.exception.ProductNotFoundException;
 
 @RestController
 public class ProductContoller {
@@ -28,7 +31,7 @@ public class ProductContoller {
 				return product;
 			}
 		}
-		return null;
+		throw new ProductNotFoundException();
 	}
 
 	// get one product by name
@@ -40,7 +43,7 @@ public class ProductContoller {
 				return product;
 			}
 		}
-		return null;
+		throw new ProductNotFoundException();
 	}
 
 	// get all products
@@ -54,14 +57,26 @@ public class ProductContoller {
 
 	// create product
 	@RequestMapping(value = "/products", method = RequestMethod.POST)
-	public List<Product> addProduct(@RequestBody Product productObj){
+	public List<Product> addProduct(@RequestBody(required=false) Product productObj){
+		if(productObj == null) {
+			throw new InvalidProductException();
+		}
+		for (Product product : products) {
+			if (product.getId()== productObj.getId() || product.getName().equals(productObj.getName())) {
+				throw new ProductAlreadyExistException();
+			}
+		}
 		products.add(productObj);
 		return products;
 	}
 	
 	// update product
 	@RequestMapping(value = "/products/{id}", method= RequestMethod.PUT)
-	public Product updateOneProduct(@PathVariable("id") int id, @RequestBody Product productObj) {
+	public Product updateOneProduct(@PathVariable("id") int id, @RequestBody(required=false) Product productObj) {
+		
+		if(productObj == null || id < 0 ) {
+			throw new InvalidProductException();
+		}
 		
 		for (int i=0; i<products.size(); i++) {
 			if (products.get(i).getId() == id) {
@@ -69,7 +84,7 @@ public class ProductContoller {
 				return products.get(i);
 			}
 		}
-		return null;
+		throw new ProductNotFoundException();
 	}
 	
 	// delete product
@@ -82,7 +97,7 @@ public class ProductContoller {
 				return products;
 			}
 		}
-		return null;
+		throw new ProductNotFoundException();
 	}
 	
 	private List<Product> addDefaultProduct() {
